@@ -2,25 +2,6 @@
 from src.code.company import Factory
 from src.code.product import Product, RawMaterial, RawMaterialMount
 
-#venta
-class Sale: 
-  def __init__(self, clasification: str, factories: list[Factory], materials: list[RawMaterial]) -> None:
-    self._clasification = clasification
-    self._factories = factories
-    self._materials = materials
-    
-  @property
-  def clasification(self) -> str:
-    return self._clasification
-  
-  @property
-  def factories(self) -> list[Factory]:
-    return self._factories
-  
-  @property
-  def materials(self) -> list[RawMaterial]:
-    return self._materials
-
 #apartado de tecnologia
 celular = Product('celular', 'tecnology', 100)
 computer = Product('computer', 'tecnology', 150)
@@ -46,8 +27,4 @@ factory_bike = Factory(raw_bike)
 factory_truck = Factory(raw_truck)
 transport_raw = [RawMaterialMount(raw_car, 100), RawMaterialMount(raw_bike, 200), RawMaterialMount(raw_truck, 50)]
 transport_factory = [factory_car, factory_bike, factory_truck]
-
-tec = Sale('tecnology', tec_factory, tec_raw)
-transport = Sale('transport', transport_factory, transport_raw)
-
 
