@@ -3,11 +3,11 @@ import json
 import random as rnd
 
 #penalizacion
-def pen() -> float:
+def pen(min=0, max=1) -> float:
   while True:
     response = rnd.random()
     
-    if response != 0:
+    if response > 0 and response <= max:
       return response
     
 #respuesta parseada

@@ -25,7 +25,7 @@ class Factory:
 
 #empresa
 class Company:
-  def __init__(self, name: str, clasification: str, presp=100000):
+  def __init__(self, name: str, clasification: str, presp=10000000):
     self._name = name #nombre de la empresa
     self._clasification = clasification #tipo de producto al que se dedica
     self._presp = presp #presupuesto de la empresa
@@ -101,7 +101,7 @@ class Company:
       self._add_raw(raw)
   
   #vender productos
-  def sold(self, products: list[ProductMount]):
+  def sell(self, products: list[ProductMount]):
     for product in products:
       self._presp += product.mount * product.product.price
       self._delete_product(product)
