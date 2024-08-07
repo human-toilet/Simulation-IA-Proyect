@@ -95,7 +95,7 @@ class Company:
         return
   
   #comprar materia prima
-  def buy(self, materials: list[RawMaterialMount]):
+  def _buy(self, materials: list[RawMaterialMount]):
     for raw in materials:
       self._presp -= raw.mount * raw.material.price
       self._add_raw(raw)
@@ -105,6 +105,10 @@ class Company:
     for product in products:
       self._presp += product.mount * product.product.price
       self._delete_product(product)
+  
+  #accion de cada empresa (IA)
+  def action(self, materials: list[RawMaterialMount], transactions: list[ProductMount]) -> str:
+    return ''
   
   @property
   def name(self) -> str:

@@ -81,5 +81,3 @@ class RawMaterialMount:
   @property
   def mount(self) -> int:
     return self._mount
-
-

@@ -1,40 +1,55 @@
 from src.code.company import Company
+from src.code.market import Market
 from src.code.product import ProductMount
 from src.utils import pen
+from src.nlp.nlp import response_result
 import os
 
 #cliente final que compra los productos a las empresas
 class Client:
-  def __init__(self, clasification: str):
+  def __init__(self, clasification=None):
     self._pen = self._get_pen(clasification)
+    self._last_week_transactions = []
     
   #calcular la penalizacion que usa el cliente para com[rar una cantidad de productos]
-  def _get_pen(self, clasification='') -> float:
+  def _get_pen(self, clasification) -> float:
     if clasification == 'abundance':
       return pen(0.4)
     
     if clasification == 'low':
-      return pen(max=0.3)
+      return pen(max=0.2)
     
     return pen()
   
   #accion de comprar
-  def buy(self, companies: list[Company]):
+  def action(self, companies: list[Company]):
+    self._last_week_transactions = []
+    result = ''
+    
     for company in companies:
       for products in company.products:
         company.sell(ProductMount(products.product, int(products.mount * self._pen)))
-
+        result += f'El cliente compro {int(products.mount * self._pen)} unidades de {products.product}\n a la empresa {company.name}.\n'
+        self._last_week_transactions.append(ProductMount(products.product, int(products.mount * self._pen)))
+    
+    return result
+  
+  @property
+  def last_week_transactions(self) -> list[ProductMount]:
+    return self._last_week_transactions
+       
 #simulacion
 class Sim():
   def __init__(self):
-    self._companies: list[Company] = []
+    self._companies = []
     self._client = None
     self._weeks = None
+    self._market = Market()
   
   #visual
   def sim(self):
     os.system('clear')
-    input('Welcome. Before start, add a company')
+    input('Welcome. Before start, add a company...')
     
     while True:
       name = self._set_name()
@@ -48,6 +63,8 @@ class Sim():
       
     self._client = self._set_client()
     self._weeks = self._set_weeks()
+    actions = self._execution()
+    self._handle_querys(actions)
   
   #seleccionar el nombre de la empresa
   def _set_name(self) -> str:
@@ -101,7 +118,7 @@ class Sim():
           return Client('low')
         
         if int(option) == 3:
-          return(Client())
+          return Client()
         
         input('Ingress a valid option. Press "enter" to continue')
         
@@ -117,10 +134,55 @@ class Sim():
       
       try:
         if int(weeks) > 0:
-          return weeks
+          return int(weeks)
 
-        input('Ingress a valid number. Press "enter" to continue')
+        input('Ingress number higher than 0. Press "enter" to continue')
         
       except:
         input('Ingress a valid number. Press "enter" to continue')
+    
+  #ejecutar la simulacion
+  def _execution(self) -> str:
+    os.system('clear')
+    result = ''
+    
+    for i in range(self._weeks):
+      result += f'SEMANA {i + 1}:\n'
+      
+      for company in self._companies:
+        result += f'{company.action(self._market.products, self._client.last_week_transactions)}.\n'
         
+      result += self._client.action(self._companies)
+      result += '=============================================================================\n'
+      
+    input(result)
+    return result
+        
+  #encabezado del informe que se le enviara al modelo
+  def _header_inform(self) -> str:
+    result = f'En la simulacion se encuentran las siguiente empresas:\n'
+    
+    for company in self._companies:
+      result += f'Empresa "{company.name}", dedicada a {company.clasification}\n'
+      
+    result += 'Tambien se cuenta con un cliente final, cuya labor es comprar los productos de la empresa.'
+    result += 'A continuacion te voy a enviar un informe de lo que sucedio cada semana.\n'
+    return result
+    
+  #manejo de las querys
+  def _handle_querys(self, inform: str):
+    os.system('clear')
+    inform = self._header_inform() + inform
+    input('Now, put some querys about the simulation...\n')
+    
+    while(True):  
+      query = input('query: ')
+      os.system('clear')
+      print('Loading...')
+      result = response_result(inform, query)
+      os.system('clear')
+      print('RESULTS:')
+      print(result)
+      print('')
+      input('Press "enter" to make another query...\n')
+      

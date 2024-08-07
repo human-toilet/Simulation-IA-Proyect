@@ -7,7 +7,7 @@ def pen(min=0, max=1) -> float:
   while True:
     response = rnd.random()
     
-    if response > 0 and response <= max:
+    if response > min and response <= max:
       return response
     
 #respuesta parseada
