@@ -1,11 +1,14 @@
 #dependencias
 from src.code.product import *
+from src.utils import pen
 
 #factoria
 class Factory:
-  def __init__(self, material: RawMaterial, price=10000):
+  def __init__(self, material: RawMaterial, price=100000):
     self._material = material #tipo de producto que produce
     self._price = price #precio de la factoria
+    self._active = True #saber si la factoria esta o no en condiciones de usarse
+    self._reparation = 0 if self._active else price * pen(max=0.25) #precio de arreglar la factoria
   
   def __repr__(self) -> str:
     return f'(Factory of: {self._material})'
@@ -14,7 +17,11 @@ class Factory:
   def produce(self, cant: int) -> ProductMount:
     return ProductMount(Product(self._material.product.name, self.material.product.clasification, 
                                 self.material.product.price + self.material.product.price / 3), cant)
-    
+   
+  #arreglar la factoria
+  def activate(self):
+    self._active = True
+   
   @property
   def material(self) -> RawMaterial:
     return self._material
@@ -23,9 +30,17 @@ class Factory:
   def price(self) -> int:
     return self._price 
 
+  @property
+  def active(self) -> bool:
+    return self._active
+
+  @property
+  def reparation(self) -> float:
+    return self._reparation
+  
 #empresa
 class Company:
-  def __init__(self, name: str, clasification: str, presp=10000000):
+  def __init__(self, name: str, clasification: str, presp=10000000.0):
     self._name = name #nombre de la empresa
     self._clasification = clasification #tipo de producto al que se dedica
     self._presp = presp #presupuesto de la empresa
@@ -99,6 +114,11 @@ class Company:
     for raw in materials:
       self._presp -= raw.mount * raw.material.price
       self._add_raw(raw)
+  
+  #arreglar una factoria
+  def _fix_factory(self, factory: Factory):
+    factory.activate()
+    self._presp -= factory.reparation
   
   #vender productos
   def sell(self, products: list[ProductMount]):
