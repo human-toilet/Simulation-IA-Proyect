@@ -10,7 +10,7 @@ import os
 class Client:
   def __init__(self, clasification=None):
     self._pen = self._get_pen(clasification)
-    self._last_week_transactions = []
+    self._last_week_transactions = {}
     
   #calcular la penalizacion que usa el cliente para com[rar una cantidad de productos]
   def _get_pen(self, clasification) -> float:
@@ -24,19 +24,21 @@ class Client:
   
   #accion de comprar
   def action(self, companies: list[Company]):
-    self._last_week_transactions = []
+    self._last_week_transactions = {}
     result = ''
     
     for company in companies:
+      self.last_week_transactions[company] = []
+      
       for products in company.products:
         company.sell(ProductMount(products.product, int(products.mount * self._pen)))
         result += f'El cliente compro {int(products.mount * self._pen)} unidades de {products.product}\n a la empresa {company.name}.\n'
-        self._last_week_transactions.append(ProductMount(products.product, int(products.mount * self._pen)))
+        self._last_week_transactions[company].append(ProductMount(products.product, int(products.mount * self._pen)))
     
     return result
   
   @property
-  def last_week_transactions(self) -> list[ProductMount]:
+  def last_week_transactions(self) -> dict[Company, list[ProductMount]]:
     return self._last_week_transactions
        
 #simulacion
@@ -151,7 +153,7 @@ class Sim():
       result += f'SEMANA {i + 1}:\n'
       
       for company in self._companies:
-        result += f'{company.action(self._market.products, self._client.last_week_transactions)}.\n'
+        result += f'{company.action(self._market.products, self._client.last_week_transactions[company])}.\n'
         
       result += self._client.action(self._companies)
       result += '=============================================================================\n'
