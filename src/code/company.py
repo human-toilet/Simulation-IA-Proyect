@@ -142,3 +142,6 @@ class Company:
   def products(self) -> list[ProductMount]:
     return self._products
   
+  @property
+  def presp(self) -> float:
+    return self._presp

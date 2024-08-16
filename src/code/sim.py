@@ -164,7 +164,7 @@ class Sim():
     result = f'En la simulacion se encuentran las siguiente empresas:\n'
     
     for company in self._companies:
-      result += f'Empresa "{company.name}", dedicada a {company.clasification}\n'
+      result += f'Empresa "{company.name}", dedicada a {company.clasification} con un presupuesto de {company.presp} dolares\n'
       
     result += 'Tambien se cuenta con un cliente final, cuya labor es comprar los productos de la empresa.'
     result += 'A continuacion te voy a enviar un informe de lo que sucedio cada semana.\n'
