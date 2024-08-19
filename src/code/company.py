@@ -1,6 +1,7 @@
 #dependencias
+from src.code.action import Action
 from src.code.product import *
-from src.utils import pen
+from src.utils import pen, clone
 
 #factoria
 class Factory:
@@ -32,6 +33,8 @@ class Factory:
 
   @property
   def active(self) -> bool:
+    activation = True if pen() >= 0.15 else False
+    self._active = activation
     return self._active
 
   @property
@@ -56,6 +59,12 @@ class Company:
     for factory in self._factories:
       if factory.material == material:
         return factory
+  
+  #materia prima que produce un producto
+  def _get_material(self, product: Product) -> RawMaterial:
+    for materials in self._raw_material:
+      if materials.material.product == product:
+        return materials.material
   
   #agregar una cantidad de un producto
   def _add_product(self, product: ProductMount):
@@ -96,7 +105,11 @@ class Company:
           
   #producir un producto en cierta cantidad
   def _produce(self, raw: RawMaterial, cant: int) -> bool:
-    factory = self._get_factory(raw)   
+    factory = self._get_factory(raw)  
+    
+    if not factory.active:
+      self._fix_factory(factory)
+       
     production = factory.produce(cant)
     self._add_product(production)
     self._delete_raw(raw, cant * 10)
@@ -127,9 +140,64 @@ class Company:
       self._delete_product(product)
   
   #accion de cada empresa (IA)
-  def action(self, materials: list[RawMaterialMount], transactions: list[ProductMount]) -> str:
-    return ''
+  def action(self, materials: list[RawMaterialMount], factories: list[Factory], transactions: list[ProductMount]) -> str:
+    action = Action(transactions, self._products)
+    states = action.states
+    
+    if len(states) == 0:
+      return f'La empresa {self._name} no hizo ni pinga'
+    
+    for state in states:
+      if self._valid(state.product_mount) and self._action(state.product_mount, materials, factories, True):
+        return self._action(state.product_mount, materials, factories, False)
   
+  def _action(self, production: list[ProductMount], material_market: list[RawMaterialMount], 
+              factories_market: list[Factory], clon: bool) -> str | bool:
+    temp = self._clone_company() if clone else self
+    inform = ''
+    
+    for products in production:
+      rest = None
+      
+      for product_mount in temp.products:
+        if product_mount.product == products.product:
+          rest = products.mount - product_mount.mount
+      
+      if rest == None:
+        rest = products.mount
+        
+      for materials in material_market:
+        if materials.material.product == products.product:
+          temp._buy([RawMaterialMount(materials.material, rest * 10)])
+          inform += f'La empresa {temp._name} compro {rest * 10} unidades de {materials.material.name}.\n'
+      
+      if temp._get_factory(temp._get_material(products.product)) == None:
+        self._build(factories_market, temp._get_material(products.product))
+        inform += f'La empresa {temp.name} construyo una factoria que convierte {temp._get_material(products.product).name} en {products.product.name}.\n'
+        
+      temp._produce(temp._get_material(products.product), rest)
+      inform += f'La empresa {temp.name} produjo {rest} unidades de {products.product}.\n'
+        
+    if temp._presp >= 0:
+      return inform
+      
+  #clonar una empresa
+  def _clone_company(self) -> 'Company':
+    clon = Company(self._name, self._clasification, self._presp)
+    clon._factories = clone(self._factories)
+    clon._raw_material = clone(self._raw_material)
+    clon._products = clone(self._products)
+    return clon
+  
+  #saber si un estado es valido
+  def _valid(self, state: list[ProductMount]) -> bool:
+    for products in state:
+      for product_mount in self._products:
+        if products.product == product_mount.product and products.mount < product_mount.mount:
+          return False
+          
+    return True
+     
   @property
   def name(self) -> str:
     return self._name
@@ -142,6 +210,3 @@ class Company:
   def products(self) -> list[ProductMount]:
     return self._products
   
-  @property
-  def presp(self) -> float:
-    return self._presp
