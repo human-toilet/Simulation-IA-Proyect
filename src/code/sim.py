@@ -2,16 +2,19 @@
 from src.code.company import Company
 from src.code.market import Market
 from src.code.product import ProductMount
-from src.utils import pen
 from src.nlp.nlp import response_result
+from src.utils import pen
 import os
 
 #cliente final que compra los productos a las empresas
 class Client:
-  def __init__(self, clasification=None):
+  def __init__(self, companies: list[Company], clasification=None):
     self._pen = self._get_pen(clasification)
     self._last_week_transactions = {}
     
+    for company in companies:
+      self._last_week_transactions[company] = []
+      
   #calcular la penalizacion que usa el cliente para com[rar una cantidad de productos]
   def _get_pen(self, clasification) -> float:
     if clasification == 'abundance':
@@ -77,7 +80,7 @@ class Sim():
       name = input('Name: ')
       
       if len(list(filter(lambda x: x.name == name, self._companies))) != 0 or name == '':
-        input('Invalid name or name already exists. Press "enter" to continue')
+        input('Invalid name or name already exists. Press "enter" to continue...')
         continue
       
       return name
@@ -98,10 +101,10 @@ class Sim():
         if int(response) == 2:
           return 'Transport'
 
-        input('Ingress a valid option')
+        input('Ingress a valid option...')
 
       except:
-        input('Ingress a number')
+        input('Ingress a number...')
         
   #crear al client
   def _set_client(self) -> Client:
@@ -115,18 +118,18 @@ class Sim():
       
       try:
         if int(option) == 1:
-          return Client('abundance')
+          return Client(self._companies, 'abundance')
         
         if int(option) == 2:
-          return Client('low')
+          return Client(self._companies, 'low')
         
         if int(option) == 3:
-          return Client()
+          return Client(self._companies, )
         
-        input('Ingress a valid option. Press "enter" to continue')
+        input('Ingress a valid option. Press "enter" to continue...')
         
       except:
-        input('Ingress a number. Press "enter" to continue')
+        input('Ingress a number. Press "enter" to continue...')
         
   #determinar la duracion en semanas de la simulacion
   def _set_weeks(self) -> int:
@@ -153,7 +156,10 @@ class Sim():
       result += f'SEMANA {i + 1}:\n'
       
       for company in self._companies:
-        result += f'{company.action(self._market.products, self._client.last_week_transactions[company])}.\n'
+        for sale in self._market.products:
+          if sale.clasification.lower() == company.clasification.lower():
+            result += f'{company.action(sale.materials, sale.factories, self._client.last_week_transactions[company])}.\n'
+            break
         
       result += self._client.action(self._companies)
       result += '=============================================================================\n'
@@ -188,4 +194,3 @@ class Sim():
       print(result)
       print('')
       input('Press "enter" to make another query...\n')
-      
