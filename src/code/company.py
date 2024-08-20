@@ -169,15 +169,15 @@ class Company:
       for materials in material_market:
         if materials.material.product.name == products.product.name:
           temp._buy([RawMaterialMount(materials.material, rest * 10)])
-          inform += f'La empresa {temp._name} compro {rest * 10} unidades de {materials.material.name} a {materials.material.price} dolares cada una.\n'
+          inform += f'La empresa {temp._name} compro {rest * 10} unidades de {materials.material.name} a {materials.material.price} dolares cada una quedandose con un presupuesto de {temp._presp}.\n'
           break
         
       if temp._get_factory(temp._get_material(products.product)) == None:
         factory = temp._build(factories_market, temp._get_material(products.product))
-        inform += f'La empresa {temp.name} construyo una factoria por el precio de {factory.price} dolares que convierte {temp._get_material(products.product).name} en {products.product.name}.\n'
+        inform += f'La empresa {temp.name} construyo una factoria por el precio de {factory.price} dolares que convierte {temp._get_material(products.product).name} en {products.product.name} quedandose con un presupuesto de {temp._presp}.\n'
         
       temp._produce(temp._get_material(products.product), rest)
-      inform += f'La empresa {temp.name} produjo {rest} unidades de {products.product}.\n'
+      inform += f'La empresa {temp.name} produjo {rest} unidades de {products.product} quedandose con un presupuesto de {temp._presp}.\n'
         
     if temp._presp >= 0:
       return inform
