@@ -40,19 +40,19 @@ class Action:
       result[aux] = 0
       
       for transaction in transactions:
-        if transaction.product == aux:
+        if transaction.product.name == aux.name:
           result[aux] = transaction.mount / product_mount.mount 
           break
     
     return result
   
   #fijar el limite de cada producto para la generacion de "states" 
-  def _limits(self, products: list[ProductMount]) -> dict[Product, float]:
+  def _limits(self, products: list[ProductMount]) -> dict[Product, int]:
     result = {}
 
     for product in products:
       aux = product.product
-      result[aux] = product.mount + product.mount * self._products_score[aux]
+      result[aux] = product.mount + int(product.mount * self._products_score[aux])
       
     return result
   
@@ -63,12 +63,13 @@ class Action:
     
     if len(result) != 0:
       result.sort(key=lambda x: x.score)
+      result.reverse()
     
     else:
       products = []
       
       for material_mount in market:
-        products.append(ProductMount(material_mount.material.product, (material_mount.mount / 10) / 10))
+        products.append(ProductMount(material_mount.material.product, int((material_mount.mount / 10) / 10)))
       
       result.append(State(products, self._products_score))
       
@@ -81,13 +82,13 @@ class Action:
     
     else:
       i = 0
-      aux = products[iter]
+      aux = products[iter].product
 
       while True:  
-        if i * 10 > self._products_limit[aux]:
+        if i * 10 > self._products_limit[aux] + 10:
           break
         
-        self._gen_states_rec(products, iter + 1, temp + [ProductMount(products[iter].product, i * 10) if i != 0 else temp], result)
+        self._gen_states_rec(products, iter + 1, temp + [ProductMount(products[iter].product, i * 10)] if i != 0 else temp, result)
         i += 1
   
   @property

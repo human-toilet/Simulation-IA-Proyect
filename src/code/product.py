@@ -5,9 +5,6 @@ class Product:
     self._clasification = clasification #clasificacion del producto
     self._price = price #precio por unidad
     
-  def __eq__(self, product: object) -> bool:
-    return self._name == product.name
-    
   def __repr__(self) -> str:
     return f'Product: ({self._name}, {self._clasification})'
   

@@ -12,7 +12,7 @@ raw_tv = RawMaterial('raw tv', tv, 5)
 factory_celular = Factory(raw_celular)
 factory_computer = Factory(raw_computer)
 factory_tv = Factory(raw_tv)
-tec_raw = [RawMaterialMount(raw_celular, 500), RawMaterialMount(raw_computer, 300), RawMaterialMount(raw_tv, 400)]
+tec_raw = [RawMaterialMount(raw_celular, 5000), RawMaterialMount(raw_computer, 3000), RawMaterialMount(raw_tv, 4000)]
 tec_factory = [factory_celular, factory_computer, factory_tv]
 
 #apartado de transporte
@@ -25,6 +25,6 @@ raw_truck = RawMaterial('raw truck', truck, 2000)
 factory_car = Factory(raw_car)
 factory_bike = Factory(raw_bike)
 factory_truck = Factory(raw_truck)
-transport_raw = [RawMaterialMount(raw_car, 100), RawMaterialMount(raw_bike, 200), RawMaterialMount(raw_truck, 50)]
+transport_raw = [RawMaterialMount(raw_car, 1000), RawMaterialMount(raw_bike, 2000), RawMaterialMount(raw_truck, 500)]
 transport_factory = [factory_car, factory_bike, factory_truck]
 

@@ -32,7 +32,7 @@ class Market:
     
   #generar los RawMaterialMount con una penalizacion aleatoria  
   def _gen(self, list_raw: list[RawMaterialMount], factories: list[Factory], clasification: str) -> Sale:
-    raw = list(map(lambda x: RawMaterialMount(x.material, int(x.mount * pen())), list_raw))
+    raw = list(map(lambda x: RawMaterialMount(x.material, int(x.mount * pen(min=0.7))), list_raw))
     return Sale(clasification, factories, raw)
   
   @property
