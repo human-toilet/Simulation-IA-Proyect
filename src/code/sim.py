@@ -15,10 +15,10 @@ class Client:
     for company in companies:
       self._last_week_transactions[company] = []
       
-  #calcular la penalizacion que usa el cliente para com[rar una cantidad de productos]
+  #calcular la penalizacion que usa el cliente para comprar una cantidad de productos]
   def _get_pen(self, clasification) -> float:
     if clasification == 'abundance':
-      return pen(0.4)
+      return pen(min=0.5)
     
     if clasification == 'low':
       return pen(max=0.2)
@@ -35,7 +35,7 @@ class Client:
       
       for products in company.products:
         company.sell(ProductMount(products.product, int(products.mount * self._pen)))
-        result += f'El cliente compro {int(products.mount * self._pen)} unidades de {products.product}\n a la empresa {company.name}.\n'
+        result += f'El cliente compro {int(products.mount * self._pen)} unidades del producto "{products.product.name}" a la empresa "{company.name}" por un precio de "{products.product.price} cada unidad".\n'
         self._last_week_transactions[company].append(ProductMount(products.product, int(products.mount * self._pen)))
     
     return result
@@ -158,13 +158,22 @@ class Sim():
       for company in self._companies:
         for sale in self._market.products:
           if sale.clasification.lower() == company.clasification.lower():
-            result += f'{company.action(sale.materials, sale.factories, self._client.last_week_transactions[company])}.\n'
+            action = f'{company.action(sale.materials, sale.factories, self._client.last_week_transactions[company])}.\n'
+            
+            if f'La empresa {company.name} quebro' in action:
+              self._companies = list(filter(lambda x: x.name != company.name, self._companies))
+            
+            result += action
             break
         
       result += self._client.action(self._companies)
-      result += '=============================================================================\n'
-      
-    input(result)
+      result += '\n'
+    
+    for company in self._companies:
+      result += f'El presupuesto final de la empresa "{company.name}" es de {company._presp} dolares.\n'
+    
+    result += '\n'
+    input(result + 'Press "enter" to continue...')
     return result
         
   #encabezado del informe que se le enviara al modelo
@@ -172,7 +181,7 @@ class Sim():
     result = f'En la simulacion se encuentran las siguiente empresas:\n'
     
     for company in self._companies:
-      result += f'Empresa "{company.name}", dedicada a {company.clasification} con un presupuesto de {company._presp} dolares\n'
+      result += f'Empresa "{company.name}", dedicada a "{company.clasification}" con un presupuesto de {company._presp} dolares\n'
       
     result += 'Tambien se cuenta con un cliente final, cuya labor es comprar los productos de la empresa.'
     result += 'A continuacion te voy a enviar un informe de lo que sucedio cada semana.\n'
