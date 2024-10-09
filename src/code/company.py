@@ -1,31 +1,27 @@
 #dependencias
-from src.code.action import Action
+from src.code.action import AgentBDI, State, Node
 from src.code.product import *
 from src.utils import pen, clone
 
 #factoria
 class Factory:
-  def __init__(self, material: RawMaterial, price=100000.0):
-    self._material = material #tipo de producto que produce
+  def __init__(self, clasification: str, price=100000.0):
+    self._clasification = clasification #tipo de productos que produce
     self._price = price #precio de la factoria
     self._active = True #saber si la factoria esta o no en condiciones de usarse
     self._reparation = 0 if self._active else price * pen(max=0.25) #precio de arreglar la factoria
-  
-  def __repr__(self) -> str:
-    return f'(Factory of: {self._material})'
-  
+    
   #producir en una cierta cantidad  
-  def produce(self, cant: int) -> ProductMount:
-    return ProductMount(Product(self._material.product.name, self.material.product.clasification, 
-                                self.material.product.price + self.material.product.price / 3), cant)
+  def produce(self, product: Product, cant: int) -> ProductMount:
+    return ProductMount(Product(product.name, self._clasification, product.price * 1.5), cant)
    
   #arreglar la factoria
   def activate(self):
     self._active = True
    
   @property
-  def material(self) -> RawMaterial:
-    return self._material
+  def clasification(self) -> str:
+    return self._clasification
 
   @property
   def price(self) -> int:
@@ -43,91 +39,65 @@ class Factory:
   
 #empresa
 class Company:
-  def __init__(self, name: str, clasification: str, presp=10000000.0):
+  def __init__(self, name: str, beliefs: list[str], presp=1000000.0):
     self._name = name #nombre de la empresa
-    self._clasification = clasification #tipo de producto al que se dedica
     self._presp = presp #presupuesto de la empresa
     self._factories = [] #factorias que posee
-    self._raw_material = [] #materia prima
     self._products = [] #productos
     self._last_products = [] #productos de la semana anterior
+    self._transactions = {} #ventas por semana
+    self._beliefs = beliefs #creencias de la empresa
     
-  def __repr__(self) -> str:
-    return f'({self._name}, {self._clasification})'  
-  
   #factoria que produce un producto
-  def _get_factory(self, material: RawMaterial) -> Factory:
+  def _get_factory(self, product: Product) -> Factory:
     for factory in self._factories:
-      if factory.material == material:
+      if factory.clasification == product.clasification:
         return factory
   
-  #materia prima que produce un producto
-  def _get_material(self, product: Product) -> RawMaterial:
-    for materials in self._raw_material:
-      if materials.material.product.name == product.name:
-        return materials.material
-  
   #agregar una cantidad de un producto
-  def _add_product(self, product: ProductMount):
+  def _add_product(self, product_mount: ProductMount):
     for i in range(len(self._products)):
-      if self._products[i].product.name == product.product.name:
-        self._products[i] = ProductMount(self._products[i].product, self._products[i].mount + product.mount)
+      if self._products[i].product.name == product_mount.product.name:
+        self._products[i] = ProductMount(self._products[i].product, self._products[i].mount + product_mount.mount)
         return
     
-    self._products.append(product)
-   
-  #agregar una cantidad de materia prima
-  def _add_raw(self, raw: RawMaterialMount):
-    for i in range(len(self._raw_material)):
-      if self._raw_material[i].material == raw.material:
-        self._raw_material[i] = ProductMount(self._raw_material[i].material, self._raw_material[i].mount + raw.mount)
-        return
-    
-    self._raw_material.append(raw)
+    self._products.append(product_mount)
    
   #eliminar un producto vendido 
   def _delete_product(self, product: ProductMount):
     for i in range(len(self._products)):
       if self._products[i].product.name == product.product.name:
         self._products[i] = ProductMount(self._products[i].product, self._products[i].mount - product.mount)
-        self._presp += self._products[i].product.price * self._products[i].mount
         
         if self._products[i].mount == 0:
-          self._products = self._products[:i] + self._products[i + 1:] if i != len(self._products) - 1 else self._products[:i]
-    
-  #eliminar materia prima usada
-  def _delete_raw(self, raw: RawMaterial, cant: int):
-    for i in range(len(self._raw_material)):
-      if self._raw_material[i].material == raw:
-        self._raw_material[i] = RawMaterialMount(self._raw_material[i].material, self._raw_material[i].mount - cant)
-        
-        if self._raw_material[i].mount == 0:
-          self._raw_material = self._raw_material[:i] + self._raw_material[i + 1:] if i != len(self._raw_material) - 1 else self._raw_material[:i]
+          del self._products[i]
           
   #producir un producto en cierta cantidad
-  def _produce(self, raw: RawMaterial, cant: int) -> bool:
-    factory = self._get_factory(raw)  
+  def _produce(self, product: Product, cant: int) -> bool:
+    factory = self._get_factory(product)  
     
     if not factory.active:
       self._fix_factory(factory)
        
     production = factory.produce(cant)
     self._add_product(production)
-    self._delete_raw(raw, cant * 10)
+    
+    for product_mount in product.requirements:
+      self._delete_product(product_mount)
   
   #construir una factoria
-  def _build(self, factories: list[Factory], raw: RawMaterial) -> Factory:
+  def _build(self, factories: list[Factory], product: Product) -> Factory:
     for factory in factories:
-      if factory.material == raw:
-        self._factories.append(factory)
+      if factory.clasification == product.clasification:
+        temp = Factory(factory.clasification, factory.price)
+        self._factories.append(temp)
         self._presp -= factory.price
-        return factory
   
-  #comprar materia prima
-  def _buy(self, materials: list[RawMaterialMount]):
-    for raw in materials:
-      self._presp -= raw.mount * raw.material.price
-      self._add_raw(raw)
+  #comprar productos
+  def _buy(self, materials: list[ProductMount]):
+    for product_mount in materials:
+      self._presp -= product_mount.mount * product_mount.product.price
+      self._add_product(product_mount)
   
   #arreglar una factoria
   def _fix_factory(self, factory: Factory):
@@ -139,23 +109,33 @@ class Company:
     self._presp += products.mount * products.product.price
     self._delete_product(products)
   
-  #accion de cada empresa (IA)
-  def action(self, materials: list[RawMaterialMount], factories: list[Factory], transactions: list[ProductMount]) -> str:
-    action = Action(transactions, self._last_products, materials)
-    states = action.states
+  #accion de cada empresa 
+  def action(self, materials: list[ProductMount], factories: list[Factory], week: int) -> str:
+    agent = AgentBDI(self._transactions[week], self._last_products, materials, self._beliefs)
+    states = agent.action()
+    nodes = []
     
     for state in states:
-      if self._valid(state.product_mount) and self._action(state.product_mount, materials, factories, True):
-        result = self._action(state.product_mount, materials, factories, False)
-        self._last_products = clone(self._products)
-        return result
-  
-  def _action(self, production: list[ProductMount], material_market: list[RawMaterialMount], 
-              factories_market: list[Factory], clon: bool) -> str | bool:
-    temp = self._clone_company() if clon else self
-    inform = ''
+      if self._valid(state.product_mount):
+        nodes.append(self._action(state, materials, factories, True))
+      
+    nodes.sort(key=lambda x: x.score)
+    nodes.reverse()
     
-    for products in production:
+    for node in nodes:
+      result = self._action(node, materials, factories, False)
+      self._last_products = clone(self._products)
+      return result
+    
+    return f'La empresa {self._name} quebro.\n'
+  
+  def _action(self, production: State | Node, material_market: list[ProductMount], factories_market: list[Factory], 
+              clon: bool) -> str | Node:
+    temp = self._clone_company() if clon else self #si le pasamos 'clon=true' significa que creamos una simulacion interna
+    inform = '' #iniciamos el informe
+    
+    for products in production.product_mount:
+      #inicialmente la diferencia entre un producto 'A' mio y uno 'A' que debo generar es 'None'
       rest = None
       
       for product_mount in temp.products:
@@ -163,30 +143,37 @@ class Company:
           rest = products.mount - product_mount.mount
           break
       
+      #si no tengo el producto la diferencia es el producto a generar
       if rest == None:
         rest = products.mount
-        
-      for materials in material_market:
-        if materials.material.product.name == products.product.name:
-          temp._buy([RawMaterialMount(materials.material, rest * 10)])
-          inform += f'La empresa {temp._name} compro {rest * 10} unidades de {materials.material.name} a {materials.material.price} dolares cada una quedandose con un presupuesto de {temp._presp}.\n'
-          break
-        
-      if temp._get_factory(temp._get_material(products.product)) == None:
-        factory = temp._build(factories_market, temp._get_material(products.product))
-        inform += f'La empresa {temp.name} construyo una factoria por el precio de {factory.price} dolares que convierte {temp._get_material(products.product).name} en {products.product.name} quedandose con un presupuesto de {temp._presp}.\n'
-        
-      temp._produce(temp._get_material(products.product), rest)
-      inform += f'La empresa {temp.name} produjo {rest} unidades de {products.product} quedandose con un presupuesto de {temp._presp}.\n'
-        
-    if temp._presp >= 0:
-      return inform
       
+      #compramos los requerimientos del producto 
+      for req in products.product.requirements:
+        for materials in material_market:
+          if materials.product.name == req.product.name:
+            temp._buy([ProductMount(materials.product, req.mount * rest)])
+            inform += f'La empresa "{temp._name}" compro {req.mount * 10} unidades del producto "{materials.product.name}" a {materials.product.price} dolares cada unidad quedandose con un presupuesto de {temp._presp} dolares.\n'
+            break
+      
+      #si no tenemos una factoria para producir un producto, construimos una    
+      if temp._get_factory(products.product) == None:
+        factory = temp._build(factories_market, products.product)
+        inform += f'La empresa {temp.name} construyo una factoria por el precio de {factory.price} dolares de tipo "{factory.clasification}", quedandose con un presupuesto de {temp._presp} dolares.\n'
+
+      temp._produce(products.product, rest)
+      inform += f'La empresa {temp.name} produjo {rest} unidades del producto "{products.product.name}" quedandose con un presupuesto de {temp._presp} dolares.\n'
+    
+    cost = (self._presp - temp._presp)
+    
+    if clon: 
+      return Node(production, cost / self._presp)
+    
+    return inform
+    
   #clonar una empresa
   def _clone_company(self) -> 'Company':
-    clon = Company('clon', self._clasification, self._presp)
+    clon = Company('clon', self._beliefs, self._presp)
     clon._factories = clone(self._factories)
-    clon._raw_material = clone(self._raw_material)
     clon._products = clone(self._products)
     return clon
   
