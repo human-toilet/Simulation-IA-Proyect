@@ -13,7 +13,7 @@ class Factory:
     
   #producir en una cierta cantidad  
   def produce(self, product: Product, cant: int) -> ProductMount:
-    return ProductMount(Product(product.name, self._clasification, product.price * 1.5), cant)
+    return ProductMount(Product(product.name, self._clasification, product.price * 1.5, product.requirements), cant)
    
   #arreglar la factoria
   def activate(self):
@@ -36,17 +36,25 @@ class Factory:
   @property
   def reparation(self) -> float:
     return self._reparation
-  
+ 
 #empresa
 class Company:
-  def __init__(self, name: str, beliefs: list[str], presp=1000000.0):
+  def __init__(self, name: str, presp=1000000.0):
     self._name = name #nombre de la empresa
     self._presp = presp #presupuesto de la empresa
     self._factories = [] #factorias que posee
     self._products = [] #productos
     self._last_products = [] #productos de la semana anterior
     self._transactions = {} #ventas por semana
-    self._beliefs = beliefs #creencias de la empresa
+    self._beliefs = [] #creencias de la empresa
+  
+  #actualizar los beliefs
+  def add_belief(self, rule: str, week: int):
+    if 'celular' in rule.lower():
+      self._beliefs.append(('celular', week))
+      
+    if 'computadora' in rule.lower():
+      self._beliefs.append(('computadora', week))
     
   #factoria que produce un producto
   def _get_factory(self, product: Product) -> Factory:
@@ -79,7 +87,7 @@ class Company:
     if not factory.active:
       self._fix_factory(factory)
        
-    production = factory.produce(cant)
+    production = factory.produce(product, cant)
     self._add_product(production)
     
     for product_mount in product.requirements:
@@ -92,6 +100,7 @@ class Company:
         temp = Factory(factory.clasification, factory.price)
         self._factories.append(temp)
         self._presp -= factory.price
+        return temp
   
   #comprar productos
   def _buy(self, materials: list[ProductMount]):
@@ -110,20 +119,21 @@ class Company:
     self._delete_product(products)
   
   #accion de cada empresa 
-  def action(self, materials: list[ProductMount], factories: list[Factory], week: int) -> str:
-    agent = AgentBDI(self._transactions[week], self._last_products, materials, self._beliefs)
+  def action(self, materials: list[ProductMount], factory: Factory, transactions: list[ProductMount], 
+             week: int) -> str:
+    agent = AgentBDI(transactions, self._last_products, materials, self._beliefs, self._products, week)
     states = agent.action()
     nodes = []
     
     for state in states:
       if self._valid(state.product_mount):
-        nodes.append(self._action(state, materials, factories, True))
+        nodes.append(self._action(state, materials, [factory], True))
       
     nodes.sort(key=lambda x: x.score)
     nodes.reverse()
     
     for node in nodes:
-      result = self._action(node, materials, factories, False)
+      result = self._action(node, materials, [factory], False)
       self._last_products = clone(self._products)
       return result
     
@@ -172,7 +182,7 @@ class Company:
     
   #clonar una empresa
   def _clone_company(self) -> 'Company':
-    clon = Company('clon', self._beliefs, self._presp)
+    clon = Company('clon', self._presp)
     clon._factories = clone(self._factories)
     clon._products = clone(self._products)
     return clon

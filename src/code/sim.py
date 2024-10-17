@@ -54,13 +54,21 @@ class Sim():
   
   #visual
   def sim(self):
+    #numero de semanas
+    self._weeks = self._set_weeks()
+    
+    #agregar las empresas
     os.system('clear')
-    input('Welcome. Before start, add a company...')
+    input('Excelent.Now, add a company...')
     
     while True:
       name = self._set_name()
-      clasification = self._set_clasification()
-      self._companies.append(Company(name, clasification))
+      company = Company(name)
+      
+      for i in range(1, self._weeks + 1):
+        self._handle_belief(company, i)
+        
+      self._companies.append(company)
       os.system('clear')
       advance = input('Press "add" to add another company in other case press "enter" to continue:\n')
       
@@ -68,7 +76,6 @@ class Sim():
         break
       
     self._client = self._set_client()
-    self._weeks = self._set_weeks()
     actions = self._execution()
     self._handle_querys(actions)
   
@@ -84,28 +91,7 @@ class Sim():
         continue
       
       return name
-  
-  #clasificar la empresa     
-  def _set_clasification(self) -> str:
-    while True:
-      os.system('clear')
-      print('Add a clasification')
-      print('1.Tecnology')
-      print('2.Transport')
-      response = input()
-
-      try:
-        if int(response) == 1:
-          return 'Tecnology'
-
-        if int(response) == 2:
-          return 'Transport'
-
-        input('Ingress a valid option...')
-
-      except:
-        input('Ingress a number...')
-        
+          
   #crear al client
   def _set_client(self) -> Client:
     while True:
@@ -135,7 +121,7 @@ class Sim():
   def _set_weeks(self) -> int:
     while True:
       os.system('clear')
-      print('Excelent. To finish, set the number of weeks that will take the simulation')
+      print('Welcome. Before start, add the numbers of weeks...')
       weeks = input('Weeks: ')
       
       try:
@@ -147,24 +133,52 @@ class Sim():
       except:
         input('Ingress a valid number. Press "enter" to continue')
     
+  #manejar los beliefs
+  def _handle_belief(self, company: Company, week: int):
+    while True:
+      os.system('clear')
+      print(f'Agregue reglas para la semana {week}:')
+      print('1.El producto celular sera el de mejor productividad')
+      print('2.El producto computadora sera el de mejor productvidad')
+      print('3.No agregar regla')
+      response = input()
+
+      try:
+        if int(response) == 1:
+          company.add_belief('celular', week)
+
+        elif int(response) == 2:
+          company.add_belief('computadora', week)
+
+        elif int(response) == 3:
+          pass
+
+        else:
+          input('Ingress a valid option...')
+          continue
+        
+        break
+
+      except:
+        input('Ingress a number...')
+      
   #ejecutar la simulacion
   def _execution(self) -> str:
     os.system('clear')
     result = ''
     
-    for i in range(self._weeks):
-      result += f'SEMANA {i + 1}:\n'
+    for i in range(self._weeks + 1):
+      result += f'SEMANA {i}:\n'
       
       for company in self._companies:
         for sale in self._market.products:
-          if sale.clasification.lower() == company.clasification.lower():
-            action = f'{company.action(sale.materials, sale.factories, self._client.last_week_transactions[company])}.\n'
-            
-            if f'La empresa {company.name} quebro' in action:
-              self._companies = list(filter(lambda x: x.name != company.name, self._companies))
-            
-            result += action
-            break
+          action = f'{company.action(sale.products, sale._factory, self._client.last_week_transactions[company], i)}.\n'
+          
+          if f'La empresa {company.name} quebro' in action:
+            self._companies = list(filter(lambda x: x.name != company.name, self._companies))
+          
+          result += action
+          break
         
       result += self._client.action(self._companies)
       result += '\n'

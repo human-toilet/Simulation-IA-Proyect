@@ -1,6 +1,6 @@
 #producto
 class Product:
-  def __init__(self, name: str, clasification: str, price: int, requirements: list['ProductMount']):
+  def __init__(self, name: str, clasification: str, price: float, requirements: list['ProductMount']):
     self._name = name #nombre del producto
     self._clasification = clasification #clasificacion del producto
     self._price = price #precio por unidad
